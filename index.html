@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartBot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap');
+        
+        :root { 
+            --neon: #00FF00; /* Ultra Bright Lime */
+            --bg: #000000; 
+            --glitch: #ff003c; 
+            --panel-bg: rgba(0, 0, 0, 0.9); 
+            --border-glow: 0 0 20px rgba(0, 255, 0, 0.6);
+        }
+
+        * { box-sizing: border-box; transition: all 0.3s ease; }
+
+        body { 
+            background: var(--bg); 
+            color: var(--neon); 
+            font-family: 'Share Tech Mono', monospace; 
+            margin: 0; 
+            overflow-x: hidden;
+            font-size: 14px;
+            text-shadow: 0 0 5px var(--neon);
+        }
+
+        /* Scanline Animation Overlay */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 255, 0, 0.05) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            z-index: 999;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+        }
+
+        #matrix { 
+            position: fixed; 
+            top: 0; left: 0; 
+            z-index: -1; 
+            opacity: 0.3; 
+        }
+
+        .wrapper { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 15px; 
+            min-height: 100vh; 
+        }
+
+        .panel { 
+            width: 100%; 
+            max-width: 950px; 
+            background: var(--panel-bg);
+            border: 2px solid var(--neon); 
+            box-shadow: var(--border-glow), inset 0 0 15px rgba(0, 255, 0, 0.2);
+            padding: 25px; 
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Header Styling */
+        .header h1 { 
+            font-family: 'Orbitron', sans-serif; 
+            text-align: center; 
+            letter-spacing: 8px; 
+            color: var(--neon); 
+            text-shadow: 0 0 20px var(--neon), 0 0 40px var(--neon);
+            font-size: clamp(1.4rem, 6vw, 2.8rem);
+            margin: 0 0 25px 0;
+            text-transform: uppercase;
+            animation: flicker 2s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+            20%, 22%, 24%, 55% { opacity: 0.5; }
+        }
+
+        /* Stats Section */
+        .stats-row { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+            margin-bottom: 25px; 
+        }
+
+        .stat-box { 
+            border: 1px solid var(--neon); 
+            padding: 12px; 
+            text-align: center; 
+            background: rgba(0, 255, 0, 0.05);
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1);
+        }
+
+        .stat-box small { display: block; font-size: 10px; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-box span { font-size: 1.3rem; font-weight: bold; color: var(--neon); }
+
+        /* Controls */
+        .controls { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 12px; 
+            margin-bottom: 20px; 
+        }
+
+        input, select, button { 
+            background: #000; 
+            border: 1px solid var(--neon); 
+            color: var(--neon); 
+            padding: 15px; 
+            font-family: inherit; 
+            font-size: 1rem; 
+            outline: none;
+            width: 100%;
+            text-transform: uppercase;
+        }
+
+        input::placeholder { color: rgba(0, 255, 0, 0.3); }
+
+        button { 
+            background: var(--neon); 
+            color: #000; 
+            font-weight: 900; 
+            cursor: pointer; 
+            letter-spacing: 4px;
+            box-shadow: 0 0 15px var(--neon);
+        }
+
+        button:hover { 
+            background: #fff; 
+            box-shadow: 0 0 30px #fff;
+            color: #000;
+        }
+
+        /* Terminal Display */
+        #terminal-log {
+            font-size: 11px;
+            color: var(--neon);
+            padding: 15px;
+            height: 120px;
+            overflow-y: hidden;
+            background: #050505;
+            margin-bottom: 20px;
+            border: 1px solid var(--neon);
+            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+
+        /* Table Section */
+        .results-table-container { 
+            height: 300px; 
+            overflow-y: auto; 
+            border: 1px solid var(--neon); 
+            background: #000; 
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--neon); color: #000; padding: 12px; font-size: 12px; position: sticky; top: 0; }
+        td { border-bottom: 1px solid rgba(0, 255, 0, 0.2); padding: 10px; text-align: center; font-size: 11px; }
+
+        /* Login Screen */
+        #login-box { max-width: 350px; margin: auto; border: 3px solid var(--neon); box-shadow: 0 0 40px rgba(0, 255, 0, 0.3); }
+        #login-box input { border-color: var(--neon); text-align: center; font-size: 2.5rem; letter-spacing: 15px; background: #0a0a0a; }
+
+        .hidden { display: none !important; }
+        
+        footer { 
+            margin-top: 30px; 
+            padding: 20px;
+            text-align: center; 
+            font-size: 11px; 
+            color: #fff; 
+            letter-spacing: 2px;
+            border-top: 1px solid var(--neon);
+        }
+        footer a { color: var(--neon); text-decoration: none; font-weight: bold; }
+
+        @media (min-width: 650px) {
+            .stats-row { grid-template-columns: repeat(4, 1fr); }
+            .controls { grid-template-columns: 2fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+<center>
+<div class="wrapper">
+    <div id="login-box" class="panel">
+        <h1 style="font-size: 1.5rem;">SmartBot</h1>
+        <p style="color: #fff; font-size: 10px; margin-bottom: 20px; letter-spacing: 3px;">Enter the Login PIN to Access</p>
+        <input type="password" id="passcode" placeholder="****" maxlength="4" autocomplete="off">
+        <button onclick="auth()" style="margin-top: 25px;">Enter</button>
+    </div>
+<center>
+    <div id="main-app" class="panel hidden">
+        <div class="header"><h1>SmartBot</h1></div>
+        
+        <div id="terminal-log">> [READY]: STANDBY FOR UPLINK...</div>
+
+        <div class="stats-row">
+            <div class="stat-box"><small>Injections</small><span id="totalHits">0</span></div>
+            <div class="stat-box"><small>Latency</small><span id="avgLatency">0.0s</span></div>
+            <div class="stat-box"><small>Engine</small><span>V8_XL</span></div>
+            <div class="stat-box"><small>Status</small><span id="botStatus">ONLINE</span></div>
+        </div>
+
+        <div class="controls">
+            <input type="url" id="targetUrl" placeholder="TARGET_URL (https://...)">
+            <input type="url" id="adUrl" placeholder="DIRECT_AD_LINK (OPTIONAL)">
+            <select id="geoTarget">
+                <option value="all">GLOBAL_PROXY_MESH</option>
+                <option value="US">US_EAST_UPLINK</option>
+                <option value="GB">UK_LONDON_NODE</option>
+            </select>
+            <input type="number" id="loopCount" value="5" min="1" placeholder="LOOPS">
+        </div>
+        
+        <button onclick="startMission()" id="fireBtn">Sprak</button>
+<br></br>
+        <div class="results-table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#ID</th>
+                        <th>STATUS</th>
+                        <th>TIME</th>
+                        <th>TRACE</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+
+        <footer>
+            <a href="https://github.com/HumayunShariarHimu" target="_blank">Humayun Shahriar Himu</a>
+        </footer>
+    </div>
+</div>
+
+<script>
+    // Matrix Background Animation
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+    const drops = Array(Math.floor(canvas.width/18)).fill(1);
+    function draw() {
+        ctx.fillStyle = "rgba(0,0,0,0.15)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = "#00FF00"; ctx.font = "15px monospace";
+        drops.forEach((y, i) => {
+            const text = String.fromCharCode(0x30A0 + Math.random()*96);
+            ctx.fillText(text, i*18, y*18);
+            if(y*18 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+        });
+    }
+    setInterval(draw, 45);
+
+    function logToTerminal(msg) {
+        const term = document.getElementById('terminal-log');
+        const time = new Date().toLocaleTimeString();
+        term.innerHTML = `> [${time}] ${msg}<br>${term.innerHTML.split('<br>').slice(0,5).join('<br>')}`;
+    }
+
+    function auth() {
+        if(document.getElementById('passcode').value === "111") {
+            logToTerminal("Handshake successful. Overriding security layers...");
+            document.getElementById('login-box').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+        } else { 
+            logToTerminal("ALERT: Authentication failed. Intrusion detected.");
+            alert("ACCESS DENIED"); 
+        }
+    }
+
+    async function startMission() {
+        const url = document.getElementById('targetUrl').value;
+        const ad_link = document.getElementById('adUrl').value;
+        const count = document.getElementById('loopCount').value;
+        const btn = document.getElementById('fireBtn');
+        const tbody = document.getElementById('resultsBody');
+        
+        if(!url) return alert("CRITICAL: TARGET URL MISSING");
+
+        btn.disabled = true; 
+        document.getElementById('botStatus').innerText = "ATTACKING";
+        document.getElementById('botStatus').style.color = "#ff003c";
+        
+        for(let i=1; i<=count; i++) {
+            try {
+                logToTerminal(`Injecting packet #${i} into target...`);
+                const fetchUrl = `/api/index?url=${encodeURIComponent(url)}&ad_link=${encodeURIComponent(ad_link)}`;
+                const res = await fetch(fetchUrl);
+                const data = await res.json();
+                
+                document.getElementById('totalHits').innerText = i;
+                document.getElementById('avgLatency').innerText = data.latency;
+
+                const row = `<tr>
+                    <td>#${i.toString().padStart(3, '0')}</td>
+                    <td style="color:${data.status==='SUCCESS'?'#00FF00':'#ff003c'}">${data.status}</td>
+                    <td>${data.latency}</td>
+                    <td style="text-align:left; color:#fff">${data.behavior.slice(-1)}</td>
+                </tr>`;
+                tbody.insertAdjacentHTML('afterbegin', row);
+                logToTerminal(`Node response: ${data.status} | Latency: ${data.latency}`);
+
+            } catch(e) {
+                logToTerminal(`Injection #${i} failed: NODE_TIMEOUT`);
+            }
+            await new Promise(r => setTimeout(r, 1500));
+        }
+        
+        btn.disabled = false; 
+        document.getElementById('botStatus').innerText = "ONLINE";
+        document.getElementById('botStatus').style.color = "#00FF00";
+        logToTerminal("Operation finished. Scrubbing traces...");
+    }
+</script>
+</body>
+</html>
+
